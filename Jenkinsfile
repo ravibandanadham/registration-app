@@ -11,7 +11,7 @@ pipeline {
         APP_NAME= "register-app-pipeline"
         RELEASE= "1.0.0"
         DOCKER_USER= "dockerjrk"
-        DOCKER_PASS= "dockerr-hub-cred"
+        DOCKER_PASS= "docker-hub-cred"
         IMAGE_NAME= "${DOCKER_USER}" + "/" + "${APP_NAME}" 
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}" 
         
