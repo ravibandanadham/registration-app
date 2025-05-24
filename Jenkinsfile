@@ -1,22 +1,19 @@
-// defining the declarative pipeline script 
 pipeline {
     agent { label 'jenkins-agent' }
 
     tools {
-        // defining java and maven tools for integration & build 
-        jdk 'java17'    // tool name configured in the jenkins global tools 
-        maven 'maven3'  // tool name configured in the jenkins global tools 
+        jdk 'java17'    // Tool name from Jenkins global config
+        maven 'maven3'  // Tool name from Jenkins global config
     }
 
-    // defining cleaning up the workspace 
     stages {
-        stage('clean up the workspace') {
+        stage('Clean up the workspace') {
             steps {
                 cleanWs()
             }
         }
 
-        stage('check out from the scm') {
+        stage('Check out from SCM') {
             steps {
                 git branch: 'main', credentialsId: 'github', url: 'https://github.com/ravibandanadham/registration-app.git'
             }
@@ -24,34 +21,37 @@ pipeline {
 
         stage('Build the application') {
             steps {
-                sh "mvn clean package"  // generating war or jar file 
+                sh "mvn clean package"
             }
         }
 
-        stage('perform the unit test with maven') {
+        stage('Perform unit tests with Maven') {
             steps {
-                sh 'mvn test'  // maven goal to test application 
+                sh 'mvn test'
             }
         }
 
-         stage('SONAR SCANNER') {
+        stage('SonarQube Analysis') {
             steps {
-             withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
-                    sh '''
-                        mvn sonar:sonar \
-                        -Dsonar.projectKey=$JOB_NAME \
-                        -Dsonar.projectName=$JOB_NAME \
-                        -Dsonar.host.url=http://172.31.10.124:9000 \
-                        -Dsonar.token=$SONAR_TOKEN
-                    '''
+                withSonarQubeEnv('sonar-scanner') {  // Replace with your actual server name in Jenkins config
+                    withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=$JOB_NAME \
+                            -Dsonar.projectName=$JOB_NAME \
+                            -Dsonar.host.url=http://172.31.10.124:9000 \
+                            -Dsonar.token=$SONAR_TOKEN
+                        '''
+                    }
                 }
+            }
         }
-         }
-          stage('sonar quality gate') {
+
+        stage('Sonar Quality Gate') {
             steps {
-               script {
-                   waitForQualityGate abortPipeline: false, credentialsId: 'sonar'
-               }
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
     }
