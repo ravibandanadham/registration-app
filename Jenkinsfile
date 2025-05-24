@@ -33,5 +33,19 @@ pipeline {
                 sh 'mvn test'  // maven goal to test application 
             }
         }
+
+         stage('SONAR SCANNER') {
+            steps {
+             withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=$JOB_NAME \
+                        -Dsonar.projectName=$JOB_NAME \
+                        -Dsonar.host.url=http://172.31.10.124:9000 \
+                        -Dsonar.token=$SONAR_TOKEN
+                    '''
+                }
+        }
+         }
     }
 }
