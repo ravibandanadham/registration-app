@@ -2,18 +2,19 @@ pipeline {
     agent { label 'jenkins-agent' }
 
     tools {
-        jdk 'java17'    // Tool name from Jenkins global config
-        maven 'maven3'  // Tool name from Jenkins global config
+        // Use Jenkins global tool configurations
+        jdk 'java17'       // JDK tool name as configured in Jenkins
+        maven 'maven3'     // Maven tool name as configured in Jenkins
     }
 
     stages {
-        stage('Clean up the workspace') {
+        stage('Clean up workspace') {
             steps {
                 cleanWs()
             }
         }
 
-        stage('Check out from SCM') {
+        stage('Checkout from SCM') {
             steps {
                 git branch: 'main', credentialsId: 'github', url: 'https://github.com/ravibandanadham/registration-app.git'
             }
@@ -21,35 +22,31 @@ pipeline {
 
         stage('Build the application') {
             steps {
-                sh "mvn clean package"
+                sh 'mvn clean package'  // Package the application (JAR/WAR)
             }
         }
 
-        stage('Perform unit tests with Maven') {
+        stage('Run unit tests') {
             steps {
-                sh 'mvn test'
+                sh 'mvn test'  // Run Maven tests
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar-scanner') {  // Replace with your actual server name in Jenkins config
-                    withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                            mvn sonar:sonar \
-                            -Dsonar.projectKey=$JOB_NAME \
-                            -Dsonar.projectName=$JOB_NAME \
-                            -Dsonar.host.url=http://172.31.10.124:9000 \
-                            -Dsonar.token=$SONAR_TOKEN
-                        '''
-                    }
+                withSonarQubeEnv('sonar-server') { // Make sure this name matches Jenkins global configuration
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=$JOB_NAME \
+                        -Dsonar.projectName=$JOB_NAME
+                    '''
                 }
             }
         }
 
-        stage('Sonar Quality Gate') {
+        stage('SonarQube Quality Gate') {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
+                script {
                     waitForQualityGate abortPipeline: true
                 }
             }
