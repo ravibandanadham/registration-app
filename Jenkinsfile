@@ -86,10 +86,11 @@ pipeline {
                 }
             }
         }
+    } 
+}
         post {
         failure {
             echo "Pipeline failed - check the Trivy scan results or other stage logs."
         }
     }
-    }
-}
+
