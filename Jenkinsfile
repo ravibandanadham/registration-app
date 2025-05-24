@@ -76,16 +76,19 @@ pipeline {
             }
         }
         stage('Scan Docker Image with Trivy') {
-            steps {
-                script {
-                    def fullImageName = "${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh """
-                        echo "Scanning image: ${fullImageName}"
-                        trivy image --exit-code 1 --severity CRITICAL,HIGH ${fullImageName}
-                    """
-                }
-            }
+    steps {
+        script {
+            def fullImageName = "${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+            sh """
+                echo "Scanning image: ${fullImageName}"
+                docker run --rm \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    aquasec/trivy:latest image --exit-code 1 --severity CRITICAL,HIGH ${fullImageName}
+            """
         }
+    }
+}
+
     } 
 }
         post {
