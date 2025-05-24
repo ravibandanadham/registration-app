@@ -2,51 +2,54 @@ pipeline {
     agent { label 'jenkins-agent' }
 
     tools {
-        // Use Jenkins global tool configurations
-        jdk 'java17'       // JDK tool name as configured in Jenkins
-        maven 'maven3'     // Maven tool name as configured in Jenkins
+        jdk 'java17'       // Jenkins Global Tool Configuration
+        maven 'maven3'     // Jenkins Global Tool Configuration
+    }
+
+    environment {
+        SONARQUBE_ENV = 'sonar-server'   // Must match SonarQube installation name in Jenkins
     }
 
     stages {
-        stage('Clean up workspace') {
+        stage('Clean Workspace') {
             steps {
                 cleanWs()
             }
         }
 
-        stage('Checkout from SCM') {
+        stage('Checkout Code') {
             steps {
                 git branch: 'main', credentialsId: 'github', url: 'https://github.com/ravibandanadham/registration-app.git'
             }
         }
 
-        stage('Build the application') {
+        stage('Build Application') {
             steps {
-                sh 'mvn clean package'  // Package the application (JAR/WAR)
+                sh 'mvn clean package'
             }
         }
 
-        stage('Run unit tests') {
+        stage('Unit Tests') {
             steps {
-                sh 'mvn test'  // Run Maven tests
+                sh 'mvn test'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar-server') { // Make sure this name matches Jenkins global configuration
+                withSonarQubeEnv("${env.SONARQUBE_ENV}") {
                     sh '''
                         mvn sonar:sonar \
-                        -Dsonar.projectKey=$JOB_NAME \
-                        -Dsonar.projectName=$JOB_NAME
+                        -Dsonar.projectKey=registration-app-ci \
+                        -Dsonar.projectName=registration-app-ci
                     '''
                 }
             }
         }
 
-        stage('SonarQube Quality Gate') {
+        stage('Quality Gate') {
             steps {
-                script {
+                timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
