@@ -75,5 +75,21 @@ pipeline {
                 }
             }
         }
+        stage('Scan Docker Image with Trivy') {
+            steps {
+                script {
+                    def fullImageName = "${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh """
+                        echo "Scanning image: ${fullImageName}"
+                        trivy image --exit-code 1 --severity CRITICAL,HIGH ${fullImageName}
+                    """
+                }
+            }
+        }
+        post {
+        failure {
+            echo "Pipeline failed - check the Trivy scan results or other stage logs."
+        }
+    }
     }
 }
